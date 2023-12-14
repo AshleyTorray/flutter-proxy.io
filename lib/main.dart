@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'interface/proxylist.dart';
 import 'dart:async';
 import 'dart:convert';
-
+import 'interface/enums.dart';
 
 
 void main() {
@@ -52,59 +52,45 @@ class _ProxyAppState extends State<ProxyApp> {
     });
   }
 
-  int getplayState()
+  int getNextState(int index)
   {
-    return 0;
-  }
-  int getStopState()
-  {
-    return 1;
-  }
-  int getLoadingState()
-  {
-    return 2;
-  }
-  int getConnectState()
-  {
-    return 3;
-  }
-
-  int getNextState()
-  {
-    switch(_connectState)
-    {
-      case 0:
-        return getLoadingState();
-      case 1:
-        return getplayState();
-      case 2:
-        return getConnectState();
-      case 3:
-        return getplayState();
+    //for test
+    if(index == ProxySate.stplay.index) {
+      Timer(const Duration(milliseconds: 3000), () => {
+          if(_connectState == ProxySate.stconnecting.index)
+          {
+            setState(() {
+              _connectState = ProxySate.stconnected.index;
+            })
+          }
+      });
     }
 
-    return getplayState();
+    if(index == ProxySate.stplay.index) return ProxySate.stconnecting.index;
+    if(index == ProxySate.stconnecting.index) return ProxySate.stplay.index;
+    if(index == ProxySate.stconnected.index) return ProxySate.stplay.index;
+
+    return ProxySate.stplay.index;
   }
 
   void onChangeConnectionState(int index){
-    if(index != _currentindex)
+    if(index != _currentindex)//if click  the button of different item , then set current state to play, set different'state to connecting
     {
       setState(() {
-        _connectState = getplayState();
+        _connectState = ProxySate.stplay.index;
       });
 
-      Timer(const Duration(milliseconds: 100), () => 
+      Timer(const Duration(milliseconds: 200), () => 
         setState(() {
           _currentindex = index;
-          _connectState = getLoadingState();
+          _connectState = getNextState(ProxySate.stplay.index);
         })
       );
-
+     
     }
     else{
       setState(() {
-        // _proxylist.removeAt(index);
-        _connectState = (_connectState+1) % 3;      
+        _connectState = getNextState(_connectState);      
       });
     }
 
@@ -112,6 +98,8 @@ class _ProxyAppState extends State<ProxyApp> {
   }
 
   void onNotifySelectItem(int index){
+    if(_connectState != ProxySate.stplay.index) return;
+
      setState(() {
       if(index > -1 && index < _proxylist.length) {
         _currentProxyurl = _proxylist[index].flag;
@@ -144,7 +132,7 @@ class _ProxyAppState extends State<ProxyApp> {
 
 class ListTileExample extends StatelessWidget  {
 
-  const ListTileExample({Key? key, this.connectState = 0, this.currentProxyurl = "file:///assets/images/brazile.png", this.index=-1, this.currentindex=0, this.proxylist = const [] , required this.notifyChangeConnectionState, required this.notifySelectItem })
+  const ListTileExample({Key? key, this.connectState = 0, this.currentProxyurl = "", this.index=-1, this.currentindex=0, this.proxylist = const [] , required this.notifyChangeConnectionState, required this.notifySelectItem })
       : super(key: key);
       
   final int index;
@@ -233,7 +221,7 @@ class ListTileExample extends StatelessWidget  {
                                   borderRadius: BorderRadius.all(Radius.circular(25)),
                                 ) 
                               ), 
-                              child: currentindex != index? const Icon(Icons.play_arrow) : (connectState == 0 ? const Icon(Icons.play_arrow) : (connectState == 1 ? const Icon(Icons.stop) : Image.asset("assets/images/loading.gif", width: 30))),
+                              child: currentindex != index? const Icon(Icons.play_arrow) : (connectState == ProxySate.stplay.index ? const Icon(Icons.play_arrow) : (connectState == ProxySate.stconnected.index ? const Icon(Icons.stop) : Image.asset("assets/images/loading.gif", width: 30))),
                               onPressed: () { ChangeConnectionState(index); },
                             ),
                           ],
@@ -297,29 +285,26 @@ class ListTileExample extends StatelessWidget  {
           widthFactor: 1,
           heightFactor: 0.2,
           alignment: FractionalOffset.bottomCenter,
-          child: Row(
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
-              const Column(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                Text("SPEED", style: TextStyle(color: Colors.blueAccent),),
-                Text("contents", style: TextStyle(color: Colors.blueAccent),)
-              ],),
+                children: <Widget>[
+                  const Text("SPEED", style: TextStyle(fontSize:22, color: Colors.blueAccent),),
+                  CircleAvatar(radius: 40,backgroundImage: currentProxyurl==''?  NetworkImage(currentProxyurl) : NetworkImage(currentProxyurl)),
+                  const Text("SPEED", style: TextStyle(fontSize:22, color: Colors.blueAccent),)                
+                ],
+              ),
               
-              Column(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                 CircleAvatar(radius: 40,backgroundImage: currentProxyurl==''?  NetworkImage(currentProxyurl) : NetworkImage(currentProxyurl)),
-                const Text("contents", style: TextStyle(color: Colors.blueAccent),)
-              ],),
-
-              const Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                Text("SPEED", style: TextStyle(color: Colors.blueAccent),),
-                Text("contents", style: TextStyle(color: Colors.blueAccent),)
-              ],)
+                children: <Widget>[
+                  const Text("contents", style: TextStyle(fontSize:18, color: Color.fromARGB(255, 240, 242, 247)),),
+                  Text(currentindex < 0 || currentindex > proxylist.length-1 ? "" : proxylist[currentindex].country, style: const TextStyle(fontSize: 30, color: Color.fromARGB(255, 240, 242, 247)),),
+                  const Text("contents", style: TextStyle(fontSize:18, color: Color.fromARGB(255, 240, 242, 247)),)
+                ],
+              ),
             ],
           )
 
