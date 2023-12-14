@@ -27,7 +27,7 @@ class _ProxyAppState extends State<ProxyApp> {
     if (response.statusCode == 200) {
       List<dynamic> list = jsonDecode(response.body);
       setState(() {
-        proxysvlist = (list).map((e) => ProxyItem.fromJson(e)).toList();
+        _proxylist = (list).map((e) => ProxyItem.fromJson(e)).toList();
       });
     } else {
       throw Exception('Failed to load Proxylist');
@@ -40,19 +40,85 @@ class _ProxyAppState extends State<ProxyApp> {
     fetchProxylist();
   }
 
-  List<ProxyItem> proxysvlist = [];
-  bool _inActive = true;
+  String _currentProxyurl = '';
+  List<ProxyItem> _proxylist = [];
+  int _connectState = 0;
+  int _currentindex = 0;
 
-  void _manageStateForChildWidget(bool newValue) {
+  void onNotifyConnectState(int newstate)
+  {
     setState(() {
-      _inActive = newValue;
-      
+      _connectState = newstate;
     });
   }
 
-  void recvDeleteItem(int index){
-    setState(() {
-      proxysvlist.removeAt(index);
+  int getplayState()
+  {
+    return 0;
+  }
+  int getStopState()
+  {
+    return 1;
+  }
+  int getLoadingState()
+  {
+    return 2;
+  }
+  int getConnectState()
+  {
+    return 3;
+  }
+
+  int getNextState()
+  {
+    switch(_connectState)
+    {
+      case 0:
+        return getLoadingState();
+      case 1:
+        return getplayState();
+      case 2:
+        return getConnectState();
+      case 3:
+        return getplayState();
+    }
+
+    return getplayState();
+  }
+
+  void onChangeConnectionState(int index){
+    if(index != _currentindex)
+    {
+      setState(() {
+        _connectState = getplayState();
+      });
+
+      Timer(const Duration(milliseconds: 100), () => 
+        setState(() {
+          _currentindex = index;
+          _connectState = getLoadingState();
+        })
+      );
+
+    }
+    else{
+      setState(() {
+        // _proxylist.removeAt(index);
+        _connectState = (_connectState+1) % 3;      
+      });
+    }
+
+    onNotifySelectItem(index);
+  }
+
+  void onNotifySelectItem(int index){
+     setState(() {
+      if(index > -1 && index < _proxylist.length) {
+        _currentProxyurl = _proxylist[index].flag;
+        _currentindex = index;
+      } else {
+        _currentProxyurl = "";
+      }
     });
   }
 
@@ -64,10 +130,12 @@ class _ProxyAppState extends State<ProxyApp> {
         useMaterial3: true,
       ),
       home: ListTileExample(
-        inActive: _inActive,
-        proxylist:  proxysvlist,
-        notifyParent: _manageStateForChildWidget,
-        notifyDeleteItme: recvDeleteItem,
+        proxylist:  _proxylist,
+        connectState: _connectState,
+        currentindex: _currentindex,
+        currentProxyurl: _currentProxyurl,
+        notifyChangeConnectionState: onChangeConnectionState,
+        notifySelectItem: onNotifySelectItem
         ),
     );
   }
@@ -76,29 +144,33 @@ class _ProxyAppState extends State<ProxyApp> {
 
 class ListTileExample extends StatelessWidget  {
 
-  const ListTileExample({Key? key, this.inActive = true, this.index=-1, this.proxylist = const [] , required this.notifyParent, required this.notifyDeleteItme})
+  const ListTileExample({Key? key, this.connectState = 0, this.currentProxyurl = "file:///assets/images/brazile.png", this.index=-1, this.currentindex=0, this.proxylist = const [] , required this.notifyChangeConnectionState, required this.notifySelectItem })
       : super(key: key);
       
-  final bool inActive;
   final int index;
-  
-  final ValueChanged<int> notifyDeleteItme;
-  final ValueChanged<bool> notifyParent;
+  final int currentindex;
+  final ValueChanged<int> notifyChangeConnectionState;
+  final ValueChanged<int> notifySelectItem;
   void manageState() {  
-    notifyParent(!inActive);
-    notifyDeleteItme(index);
+    notifyChangeConnectionState(index);
+    notifySelectItem(index);
   }
 
   final List<ProxyItem> proxylist;
+  final String currentProxyurl;
+  final int connectState;
 
-  void _pressMyAction() {
-      notifyParent(!inActive);
-      
+  void onSelectItem(int index)
+  {
+    notifySelectItem(index);
   }
+  
 
-  void DeleteItem(int index){
-    notifyDeleteItme(index);
+  void ChangeConnectionState(int index){
+    notifyChangeConnectionState(index);
   }
+  
+  // Image noImage = Image.asset("assets/defimg.jpg");
 
   void EditItem(int index){
     print("on Edit Item");
@@ -130,28 +202,28 @@ class ListTileExample extends StatelessWidget  {
                         child: Text(
                             proxylist[index].ip, 
                             style: const TextStyle(
-                              color: Colors.white,                          
+                              color: Colors.white,                     
                             ),
                         ),
                       ),
 
                       SizedBox(
-                        width: 130,
+                        width: 80,
                         child: Row(
                           children: <Widget>
                           [
-                            TextButton(                 
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.fromLTRB(10.0, 3.0, 10.0, 3.0),
-                                backgroundColor: const Color.fromARGB(255, 6, 130, 247),      
-                                side: const BorderSide(color: Color.fromARGB(255, 104, 193, 253), width: 2),  
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(Radius.circular(25)),
-                                ) 
-                              ),                      
-                              child: const Text('Edit'),
-                              onPressed: () { print("On Edit"); },
-                            ),
+                            // TextButton(                 
+                            //   style: TextButton.styleFrom(
+                            //     padding: const EdgeInsets.fromLTRB(10.0, 3.0, 10.0, 3.0),
+                            //     backgroundColor: const Color.fromARGB(255, 6, 130, 247),      
+                            //     side: const BorderSide(color: Color.fromARGB(255, 104, 193, 253), width: 2),  
+                            //     shape: const RoundedRectangleBorder(
+                            //       borderRadius: BorderRadius.all(Radius.circular(25)),
+                            //     ) 
+                            //   ),                      
+                            //   child: const Text('Edit'),
+                            //   onPressed: () { print("On Edit"); },
+                            // ),
                             TextButton(
                               style: TextButton.styleFrom(
                                 padding: const EdgeInsets.fromLTRB(10.0, 3.0, 10.0, 3.0),
@@ -161,8 +233,8 @@ class ListTileExample extends StatelessWidget  {
                                   borderRadius: BorderRadius.all(Radius.circular(25)),
                                 ) 
                               ), 
-                              child: const Text('Delete'), 
-                              onPressed: () { DeleteItem(index); },
+                              child: currentindex != index? const Icon(Icons.play_arrow) : (connectState == 0 ? const Icon(Icons.play_arrow) : (connectState == 1 ? const Icon(Icons.stop) : Image.asset("assets/images/loading.gif", width: 30))),
+                              onPressed: () { ChangeConnectionState(index); },
                             ),
                           ],
                         ),
@@ -171,10 +243,11 @@ class ListTileExample extends StatelessWidget  {
                     ],
                   ),
                   trailing: SizedBox(
-                              width: 23,
+                              width: 70,
                               child: Text(
                                   proxylist[index].price,
                                   style: const TextStyle(
+                                    fontSize: 14,
                                     color: Color.fromARGB(255, 247, 200, 32),                          
                                   ),
                               )
@@ -183,7 +256,7 @@ class ListTileExample extends StatelessWidget  {
                   // shape: const Border(bottom: BorderSide(), ),
                   tileColor: Colors.blueAccent,
                   onTap: (){
-                    print("On Tap is fired");
+                    onSelectItem(index);
                   },
                   shape: RoundedRectangleBorder(
                     side: const BorderSide(color: Colors.cyanAccent, width: 2),
@@ -219,22 +292,37 @@ class ListTileExample extends StatelessWidget  {
 
       ),
 
-      bottomNavigationBar: BottomNavigationBar(
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.thumb_up),
-              label: "Like",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.thumb_down),
-              label: "Dislike",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.comment),
-              label: "Add",
+      bottomNavigationBar: 
+        FractionallySizedBox(
+          widthFactor: 1,
+          heightFactor: 0.2,
+          alignment: FractionalOffset.bottomCenter,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              const Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                Text("SPEED", style: TextStyle(color: Colors.blueAccent),),
+                Text("contents", style: TextStyle(color: Colors.blueAccent),)
+              ],),
               
-            )
-          ],
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                 CircleAvatar(radius: 40,backgroundImage: currentProxyurl==''?  NetworkImage(currentProxyurl) : NetworkImage(currentProxyurl)),
+                const Text("contents", style: TextStyle(color: Colors.blueAccent),)
+              ],),
+
+              const Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                Text("SPEED", style: TextStyle(color: Colors.blueAccent),),
+                Text("contents", style: TextStyle(color: Colors.blueAccent),)
+              ],)
+            ],
+          )
+
         ),
       
     );
