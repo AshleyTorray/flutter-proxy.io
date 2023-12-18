@@ -1,0 +1,18 @@
+jobs:
+    build:
+      runs-on: ubuntu-latest
+      
+      steps:
+      - uses: actions/checkout@v2
+      
+      # Optionally, set up a specific Ruby version (if not using system default)
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '2.6' # Make sure it matches the expected version
+  
+      - name: Install compatible Bundler version
+        run: gem install bundler -v 2.4.22
+  
+      # Further steps...
+  
