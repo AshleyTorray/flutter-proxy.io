@@ -15,7 +15,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '2.6' # Not mandatory, but it's good to specify the Ruby version.
+        ruby-version: 'latest' # Not mandatory, but it's good to specify the Ruby version.
 
     - name: Install dependencies
       run: |
