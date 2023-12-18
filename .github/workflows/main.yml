@@ -1,0 +1,35 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '2.6' # Not mandatory, but it's good to specify the Ruby version.
+
+    - name: Install dependencies
+      run: |
+        gem install bundler
+        bundle install
+
+    - name: Build and Test
+      run: |
+        xcodebuild clean build test \
+          -project YourProject.xcodeproj \
+          -scheme YourScheme \
+          -destination 'platform=iOS Simulator,name=iPhone 11,OS=latest' \
+          -sdk iphonesimulator \
+          -enableCodeCoverage YES \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
